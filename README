@@ -1,0 +1,8 @@
+
+
+XCos Diagram implementation in microcontroller 
+----------------------------------------------
+
+This project aims to automatically implement a Discrete Time Control System
+described by a XCos/Scicos Diagram.
+
