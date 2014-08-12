@@ -4,7 +4,7 @@
 // are also available at    
 // http://www.cecill.info/licences/Licence_CeCILL_V2-en.txt
 
-function graph = getEmptySignalFlowGraph(n)
+function graph = getEmptyStateGraph(n)
     rhs = argn(2);
     if rhs == 0 then
         connmatrix = [];
@@ -20,14 +20,14 @@ function graph = getEmptySignalFlowGraph(n)
 endfunction
 
 
-function newGraph = addEdgeToSignalFlowGraph(graph, orig, dest, weight)
+function newGraph = addEdgeToStateGraph(graph, source, sink, weight)
     
     if typeof(graph) <> 'SignalFlowGraph' then
-        error('addEdgeToSignalFlowGraph: no type');
+        error('addEdgeToStateGraph: no type');
     end
 
     newGraph = graph;
     newGraph.edgeList($+1) = weight;
-    newGraph.connectionMatrix(dest, orig) = length(newGraph.edgeList); 
+    newGraph.connectionMatrix(sink, source) = length(newGraph.edgeList); 
       
 endfunction
