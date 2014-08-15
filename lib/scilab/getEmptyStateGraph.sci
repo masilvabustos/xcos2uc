@@ -31,3 +31,11 @@ function newGraph = addEdgeToStateGraph(graph, source, sink, weight)
     newGraph.connectionMatrix(sink, source) = length(newGraph.edgeList); 
       
 endfunction
+
+function graph = setStateGraphNodeList(g, node_list)
+    
+    graph = g;
+    graph.nodeList = node_list;
+    
+endfunction
+
