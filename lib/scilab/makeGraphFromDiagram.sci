@@ -21,14 +21,16 @@ function graph = makeGraphFromDiagram(diagram)
         
         current_node = current_node + 1;
         
-        block = diagram.objs(obj.from(1)); // ********* source block ******
+        // ********* source block ******
+        
+        block = diagram.objs(obj.from(1)); 
         
         found = %f
         for i = 1:length(edge_list)
             
             edge = edge_list(i);
             
-            if edge.block.gui <> block.gui then
+            if edge.weight.gui <> block.gui then
                 continue;
             end
                 
@@ -42,16 +44,17 @@ function graph = makeGraphFromDiagram(diagram)
         end
         
         if ~found then
-            edge_list($+1) = tlist(['edge', 'source', 'sink', 'block'], %inf, current_node, block);
+            edge_list($+1) = makeStateEdge(%inf, current_node, block);
         end
         
-        block = diagram.objs(obj.to(1)); //******** sink block *********
+        //******** sink block *********
+        block = diagram.objs(obj.to(1)); 
         found = %f;
         for i = 1:length(edge_list)
             
             edge = edge_list(i);
    
-            if edge.block.gui <> block.gui then
+            if edge.weight.gui <> block.gui then
                 continue;
             end
             
@@ -65,14 +68,33 @@ function graph = makeGraphFromDiagram(diagram)
         end
         
         if ~found then
-            edge_list($+1) = tlist(['edge', 'source', 'sink', 'block'], current_node, %inf, block);
+            edge_list($+1) = makeStateEdge(current_node, %inf, block)
         end 
     end
     
+    graph = getEmptyStateGraph();
+    node_list = list();
+    
     for edge = edge_list
-        disp([edge.source, edge.sink], edge.block.gui)
+        
+        if edge.source == %inf then
+            // source node
+            node_list(edge.sink) = edge.weight;
+        elseif edge.sink == %inf then
+            // sink node
+            node_list(edge.source) = edge.weight;
+        else
+            graph = addEdgeToStateGraph(graph, edge.source, edge.sink, edge.weight);
+            node_list($+1) = tlist(['simple-node']);
+        end
     end
     
-    graph = getEmptyStateGraph();
+    graph = setStateGraphNodeList(graph, node_list);
     
+    
+endfunction
+
+
+function edge = makeStateEdge(a, b, weight)
+    edge = tlist(['edge', 'source', 'sink', 'weight'], a, b, weight);
 endfunction
