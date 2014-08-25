@@ -28,7 +28,10 @@ function newGraph = addEdgeToStateGraph(graph, source, sink, weight)
 
     newGraph = graph;
     newGraph.edgeList($+1) = weight;
-    newGraph.connectionMatrix(sink, source) = length(newGraph.edgeList); 
+    newGraph.connectionMatrix(sink, source) = length(newGraph.edgeList);
+    
+    n =  max(size(newGraph.connectionMatrix))
+    newGraph.connectionMatrix = resize_matrix(newGraph.connectionMatrix, n, n);
       
 endfunction
 
