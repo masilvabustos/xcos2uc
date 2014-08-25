@@ -5,7 +5,7 @@ function graph = makeGraphFromDiagram(diagram)
         error('makeGraphFromDiagram: invalid argument type')
     end
     
-    graph = makeGraphFromDiagramObjs(diagram.objs)
+    graph = makeGraphFromDiagramObjs(diagram.objs);
     
 endfunction
 
