@@ -1,0 +1,22 @@
+
+SUPPORT_DIR=..
+
+vpath stm32f10x_%.c $(SUPPORT_DIR)/stm32vldiscovery_package/Libraries/STM32F10x_StdPeriph_Driver/src
+
+vpath core_cm3.c $(SUPPORT_DIR
+INCLUDES += -I$(SUPPORT_DIR)/stm32vldiscovery_package/Libraries/STM32F10x_StdPeriph_Driver/inc -I$(SUPPORT_DIR)/stm32vldiscovery_package/Utilities
+
+#stm32f10x_%.o: stm32f10x_%.c
+
+FIRMWARE_OBJS=$(foreach subsys,adc bkp can cec crc dac dbgmcu dma exti flash fsmc gpio i2c iwdg pwr rcc rtc sdio spi tim usart wwdg, stm32f10x_$(subsys).o)
+
+CROSS_PREFIX=arm-none-eabi-
+
+CC=$(CROSS_PREFIX)gcc
+
+CFLAGS+=$(INCLUDES) -march=cortex-m3 -Os
+
+LD=$(CROSS_PREFIX)ld
+
+$(PROJECT_NAME).bin: $(PROJECT_OBJS) $(FIRMWARE_OBJS)
+	$(LD) $^ 
