@@ -2,7 +2,7 @@
 // Creates an edge list from a diagram objects list.
 // An edge is a tuple which elements are: source sink block event_source etc.
  
-function edge_list = getBlocksGraph(objs)
+function edge_list = makeSignalFlowGraph(objs)
     
     
     edge_list = list();
