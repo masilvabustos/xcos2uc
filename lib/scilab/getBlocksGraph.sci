@@ -39,7 +39,7 @@ function edge_list = getBlocksGraph(objs)
             
             if ~found then
                 
-                edge_list($+1) = makeEdge(list(), list(), block_id, list(), list());
+                edge_list($+1) = createEdge(list(), list(), block_id, list(), list());
                 edge_list($).timing_spec = getTimingSpec(event_source);
             end
             
@@ -76,7 +76,7 @@ function edge_list = getBlocksGraph(objs)
         end
         
         if ~found then
-            edge_list($+1) = makeEdge(list(), list(current_node), block_id, list(), list(out_port));
+            edge_list($+1) = createEdge(list(), list(current_node), block_id, list(), list(out_port));
         end
         
         //******** sink block *********
@@ -102,7 +102,7 @@ function edge_list = getBlocksGraph(objs)
         end
         
         if ~found then
-            edge_list($+1) = makeEdge(list(current_node), list(), block_id, list(in_port), list());
+            edge_list($+1) = createEdge(list(current_node), list(), block_id, list(in_port), list());
         end 
     end
     
@@ -171,7 +171,7 @@ function name = getBlockName(block)
     name = block.gui
 endfunction
 
-function edge = makeEdge(source, sink, block_id, in_port, out_port)
+function edge = createEdge(source, sink, block_id, in_port, out_port)
     edge = tlist(['edge', 'block_id', 'source', 'sink', 'in_port', 'out_port', 'data_flow_hint', 'event_source', 'attributes'], block_id, source, sink, in_port, out_port, '', 0,  list());
 endfunction
 
