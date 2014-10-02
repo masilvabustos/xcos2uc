@@ -26,20 +26,22 @@ CROSS_PREFIX=arm-none-eabi
 CC=$(CROSS_PREFIX)-gcc
 AS=$(CROSS_PREFIX)-as
 LD=$(CROSS_PREFIX)-gcc -nostdlib 
+AR=$(CROSS_PREFIX)-ar
 
 #copied from https://github.com/h0rr0rrdrag0n/stm32vldiscovery-linux-template/blob/master/Makefile
 
 CFLAGS+=-c -mcpu=cortex-m3 -mthumb -O0 -mapcs-frame -D__thumb2__=1
 CFLAGS+=-msoft-float -gdwarf-2 -mno-sched-prolog -fno-hosted -mtune=cortex-m3
 CFLAGS+=-march=armv7-m -mfix-cortex-m3-ldrd -ffunction-sections -fdata-sections
-CFLAGS+=-I./cmsis -I./stm32_lib -I.
+#CFLAGS+=-I./cmsis -I./stm32_lib -I.
 ASFLAGS+=-mcpu=cortex-m3 -gdwarf-2 -gdwarf-2
 LDFLAGS+=-T"$(STM32VLDISCOVERY_PACKAGE_DIR)/Projects/link.ld" -Wl,--gc-sections -static
 CFLAGS+=$(INCLUDES)
 
 CFLAGS+=-DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD_VL 
 
-firmware: $(FIRMWARE_OBJS)
+firmware.a: $(FIRMWARE_OBJS)
+	$(AR) rc $@ $^
 
 .PHONY: clean print-drivers firmware
 
