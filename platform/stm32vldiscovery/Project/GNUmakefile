@@ -1,4 +1,6 @@
 
+STM32VLDISCOVERY_PACKAGE_DIR=$(dir $(lastword $(MAKEFILE_LIST)))/
+
 vpath stm32f10x_%.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/STM32F10x_StdPeriph_Driver/src
 
 vpath misc.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/STM32F10x_StdPeriph_Driver/src
