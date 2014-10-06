@@ -5,28 +5,16 @@
 #include <stm32f10x_usart.h>
 #include <stm32f10x_dma.h>
 
-struct serial_port {
-        USART_TypeDef* base_addr;
-	enum xfer_mode tx_xfer_mode, rx_xfer_mode;
-	uint8_t mask;
+
+struct serial_device {
+	USART_TypeDef* base_addr;
 	DMA_TypeDef* tx_dma_channel, rx_dma_channel;
+	int tx_xfer_complete_flag, rx_xfer_complete_flag;
 };
 
-void stm32f10x_set_serial_port_device(struct serial_port *port, USART_TypeDef* device)
-{
-	port->base_addr = device;
-	switch(device){
-	case USART1:
-		port->tx_dma_channel = DMA1_Channel4;
-		port->rx_dma_channel = DMA1_Channel5;
-		port->tx_xfer_complete_flag = DMA1_FLAG_TC4;
-		port->rx_xfer_complete_flag = DMA1_FLAG_TC5;
-		break;
-	}
+static const struct serial_device COM[] = {{USART1, DMA1_Channel4, DMA1_Channel5, DMA1_FLAG_TC4, DMA1_FLAG_TC5}};
 
-};
-
-void setup_serial_port_comm_parameters(struct serial_port *port, struct serial_comm_parameters params)
+void stm32f10x_setup_serial_port_comm_parameters(struct serial_port *port, struct serial_comm_parameters params)
 {
 	USART_InitTypeDef init;
 	USART_StructInit(&init);
@@ -64,12 +52,12 @@ void setup_serial_port_comm_parameters(struct serial_port *port, struct serial_c
 		break;
 	}
 	
-	USART_Init(port->base_addr, &init);
+	USART_Init(DEV[port->device].base_addr, &init);
 }
 
 void stm32f10x_reset_serial_port(struct serial_port* port)
 {
-	USART_DeInit(port->base_addr);
+	USART_DeInit(DEV[port->device].base_addr);
 }
 
 void stm32f10x_wait_for_serial_tx(struct serial_port *port)
@@ -77,7 +65,7 @@ void stm32f10x_wait_for_serial_tx(struct serial_port *port)
 	if (port->tx_xfer_mode == XFER_MODE_SYNC)
 		return;
 
-	while(DMA_GetFlagStatus(port->tx_xfer_complete_flag) == RESET)
+	while(DMA_GetFlagStatus(DEV[port->device].tx_xfer_complete_flag) == RESET)
 		;
 }
 
@@ -88,9 +76,9 @@ void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned siz
 		char *ptr = &buffer[0];
 
 		while (size--){
-			while(USART_GetFlagStatus(port->base_addr, USART_FLAG_TE) == RESET)
+			while(USART_GetFlagStatus(DEV[port->device].base_addr, USART_FLAG_TE) == RESET)
 				;
-			USART_SendData(port->base_addr, *ptr++);
+			USART_SendData(DEV[port->device].base_addr, *ptr++);
 		}
 		break;
 			
@@ -99,7 +87,7 @@ void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned siz
 		DMA_InitTypeDef config;
 		DMA_StructInit(&config);
 
-		config.DMA_PeripheralBaseAddr = &port->base_addr->DR;
+		config.DMA_PeripheralBaseAddr = &DEV[port->device].base_addr->DR;
 		config.DMA_DIR = DMA_DIR_PeripheralDST;	
 		config.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 		config.DMA_MemoryInc = DMA_MemoryInc_Enable;
@@ -109,8 +97,8 @@ void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned siz
 		config.DMA_MemoryBaseAddr = &buffer[0];
 		config.DMA_BufferSize = size;
 		
-		DMA_Init(port->tx_dma_channel, &config);
-		DMA_Cmd(port->tx_dma_channel, ENABLE);
+		DMA_Init(DEV[port->device].tx_dma_channel, &config);
+		DMA_Cmd(DEV[port->device].tx_dma_channel, ENABLE);
 		
 		break;
 	}
