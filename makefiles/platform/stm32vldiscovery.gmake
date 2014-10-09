@@ -1,0 +1,36 @@
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/stm32vldiscovery-toolchain.gmake
+
+STM32VLDISCOVERY_PACKAGE_DIR=$(PLATFORM_DIR)/stm32vldiscovery
+
+vpath stm32f10x_%.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/STM32F10x_StdPeriph_Driver/src
+
+vpath misc.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/STM32F10x_StdPeriph_Driver/src
+
+vpath core_cm3.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/CMSIS/CM3/CoreSupport
+
+vpath system_stm32f10x.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x
+
+vpath startup_stm32f10x_%.s $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x/startup/gcc_ride7
+
+vpath STM32vldiscovery.c $(STM32VLDISCOVERY_PACKAGE_DIR)/Utilities
+
+startup_stm32f10x_%.o: startup_stm32f10x_%.s
+	$(AS) $(ASFLAGS) -o $@ $^
+
+DRIVER_OBJS=$(foreach driver, $(DRIVERS), stm32f10x_$(driver).o) STM32vldiscovery.o misc.o system_stm32f10x.o startup_stm32f10x_md_vl.o
+
+CFLAGS+=$(foreach dir, $(INCLUDE_DIRS), -I$(dir))
+
+CFLAGS+=-DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD_VL 
+
+drivers: $(DRIVER_OBJS)
+
+.PHONY: clean print-drivers drivers
+
+clean:
+	rm $(DRIVER_OBJS)
+
+print-drivers:
+	@echo adc bkp can cec crc dac dbgmcu dma exti flash fsmc gpio i2c iwdg pwr rcc rtc sdio spi tim usart wwdg
+

@@ -1,0 +1,10 @@
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/../makefiles/globals.gmake
+
+include $(MAKEFILES_DIR)/toolchain.gmake
+
+SUBDIRS=serial
+
+SOURCES=$(foreach subdir, $(SUBDIRS), $(wildcard $(SUPPORT_DIR)/$(subdir)/*.c))
+
+OBJECTS=$(subst .c,.o,$(subst $(SUPPORT_DIR)/,,$(SOURCES)))

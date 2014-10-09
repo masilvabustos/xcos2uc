@@ -1,0 +1,20 @@
+
+PLATFORMS=stm32vldiscovery
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/globals.gmake
+
+TARGETS=default
+
+.PHONY: $(PLATFORMS) default
+
+default:
+	$(MAKE) -f $(MAKEFILES_DIR)/platform/$(BUILD_PLATFORM).gmake
+
+print-platforms:
+	@echo $(PLATFORMS)
+
+
+#$(TARGETS):
+#	$(MAKE) -f $(MAKEFILES_DIR)/platform/$(BUILD_PLATFORM).gmake $@
+
+

@@ -1,0 +1,2 @@
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/platform/$(BUILD_PLATFORM)-toolchain.gmake
