@@ -60,11 +60,24 @@ number_t nevilles_algorithm(unsigned N, number_t _t, number_t t[], number_t x[],
 
 #include <malloc.h>
 
+number_t f(number_t x)
+{
+	return x*(x*(x*12 + 5) + 9) + 6;
+}
+
 int main()
 {
-
+#if 0
+	number_t x;
 	struct nevilles_algorithm_workspace ws;
 	setup_nevilles_algorithm_workspace(5, &ws, malloc(nevilles_algorithm_workspace_size(5)));
 
+	
+	
+	for(x=-10; x<10; x+=.1) {
+		number_t y;
+		y = nevilles_algorithm(5, x, 
+#endif
+	
 	return 0;
 }
