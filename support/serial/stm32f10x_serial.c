@@ -8,11 +8,11 @@
 
 struct serial_device {
 	USART_TypeDef* base_addr;
-	DMA_TypeDef* tx_dma_channel, rx_dma_channel;
+	DMA_Channel_TypeDef *tx_dma_channel, *rx_dma_channel;
 	int tx_xfer_complete_flag, rx_xfer_complete_flag;
 };
 
-static const struct serial_device COM[] = {{USART1, DMA1_Channel4, DMA1_Channel5, DMA1_FLAG_TC4, DMA1_FLAG_TC5}};
+static struct serial_device COM[] = {{USART1, DMA1_Channel4, DMA1_Channel5, DMA1_FLAG_TC4, DMA1_FLAG_TC5}};
 
 void stm32f10x_setup_serial_port_comm_parameters(struct serial_port *port, struct serial_comm_parameters params)
 {
@@ -52,54 +52,57 @@ void stm32f10x_setup_serial_port_comm_parameters(struct serial_port *port, struc
 		break;
 	}
 	
-	USART_Init(DEV[port->device].base_addr, &init);
+	USART_Init(COM[port->device].base_addr, &init);
 }
 
 void stm32f10x_reset_serial_port(struct serial_port* port)
 {
-	USART_DeInit(DEV[port->device].base_addr);
+	USART_DeInit(COM[port->device].base_addr);
 }
 
 void stm32f10x_wait_for_serial_tx(struct serial_port *port)
 {
-	if (port->tx_xfer_mode == XFER_MODE_SYNC)
+	if (port->tx_xfer_mode == SYNC)
 		return;
 
-	while(DMA_GetFlagStatus(DEV[port->device].tx_xfer_complete_flag) == RESET)
+	while(DMA_GetFlagStatus(COM[port->device].tx_xfer_complete_flag) == RESET)
 		;
 }
 
 void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned size)
 {
+	char *ptr = &buffer[0];
+	DMA_InitTypeDef config;
+
 	switch(port->tx_xfer_mode) {
-	case XFER_MODE_SYNC:
-		char *ptr = &buffer[0];
+	case SYNC:
+		
 
 		while (size--){
-			while(USART_GetFlagStatus(DEV[port->device].base_addr, USART_FLAG_TE) == RESET)
+			while(USART_GetFlagStatus(COM[port->device].base_addr, USART_FLAG_TXE) == RESET)
 				;
-			USART_SendData(DEV[port->device].base_addr, *ptr++);
+			USART_SendData(COM[port->device].base_addr, *ptr++);
 		}
 		break;
-			
-	case XFER_MODE_ASYNC:
 
-		DMA_InitTypeDef config;
+#ifdef HAS_UART_DMA
+	case ASYNC:
 		DMA_StructInit(&config);
 
-		config.DMA_PeripheralBaseAddr = &DEV[port->device].base_addr->DR;
+		config.DMA_PeripheralBaseAddr = (uint32_t) &COM[port->device].base_addr->DR;
 		config.DMA_DIR = DMA_DIR_PeripheralDST;	
 		config.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 		config.DMA_MemoryInc = DMA_MemoryInc_Enable;
 		config.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
 		config.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 		
-		config.DMA_MemoryBaseAddr = &buffer[0];
+		config.DMA_MemoryBaseAddr = (uint32_t) &buffer[0];
 		config.DMA_BufferSize = size;
 		
-		DMA_Init(DEV[port->device].tx_dma_channel, &config);
-		DMA_Cmd(DEV[port->device].tx_dma_channel, ENABLE);
+		DMA_Init(COM[port->device].tx_dma_channel, &config);
+		DMA_Cmd(COM[port->device].tx_dma_channel, ENABLE);
 		
 		break;
+#endif
 	}
 }

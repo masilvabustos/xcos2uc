@@ -4,8 +4,6 @@
 
 #include "platform.h"
 
-#ifdef STM32F10x
-
 struct serial_comm_parameters {
 	int baud_rate;
 	int word_length;
@@ -16,9 +14,9 @@ struct serial_comm_parameters {
 static const struct serial_comm_parameters default_serial_comm_parameters = {9600, 8, NONE, _1_STOP_BIT};
 
 enum xfer_mode {
-		XFER_MODE_SYNC	
+		SYNC	
 #ifdef HAS_UART_DMA
-		, XFER_MODE_ASYNC
+		, ASYNC
 #endif
 } ;
 
