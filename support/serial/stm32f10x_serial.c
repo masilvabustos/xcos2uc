@@ -1,5 +1,5 @@
 
-#include "serial.h"
+#include "../include/serial.h"
 
 
 #include <stm32f10x_usart.h>
@@ -65,8 +65,28 @@ void stm32f10x_wait_for_serial_tx(struct serial_port *port)
 	if (port->tx_xfer_mode == SYNC)
 		return;
 
-	while(DMA_GetFlagStatus(COM[port->device].tx_xfer_complete_flag) == RESET)
+	while(! stm32f10x_serial_tx_complete(port))
 		;
+}
+
+int stm32f10x_serial_tx_complete(struct serial_port* port)
+{
+	if (port->tx_xfer_mode == SYNC)
+		return 1;
+	
+	return DMA_GetFlagStatus(COM[port->device].tx_xfer_complete_flag) == SET;
+}
+
+int stm32f10x_serial_tx_ready(struct serial_port *port)
+{
+	switch (port->tx_xfer_mode){
+	case ASYNC:
+		return DMA_GetCurrDataCounter(COM[port->device].tx_dma_channel) == 0 && USART_GetFlagStatus(COM[port->device].base_addr, USART_FLAG_TXE) == SET;
+	case SYNC:
+		return USART_GetFlagStatus(COM[port->device].base_addr, USART_FLAG_TXE) == SET;
+	default:
+		while(1);
+	}
 }
 
 void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned size)
@@ -88,6 +108,9 @@ void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned siz
 #ifdef HAS_UART_DMA
 	case ASYNC:
 		DMA_StructInit(&config);
+		DMA_Cmd(COM[port->device].tx_dma_channel, DISABLE);
+
+		DMA_ClearFlag(COM[port->device].tx_xfer_complete_flag);
 
 		config.DMA_PeripheralBaseAddr = (uint32_t) &COM[port->device].base_addr->DR;
 		config.DMA_DIR = DMA_DIR_PeripheralDST;	
@@ -99,7 +122,9 @@ void stm32f10x_serial_send(struct serial_port *port, char buffer[], unsigned siz
 		config.DMA_MemoryBaseAddr = (uint32_t) &buffer[0];
 		config.DMA_BufferSize = size;
 		
+		USART_ClearFlag(COM[port->device].base_addr, USART_FLAG_TC);
 		DMA_Init(COM[port->device].tx_dma_channel, &config);
+		
 		DMA_Cmd(COM[port->device].tx_dma_channel, ENABLE);
 		
 		break;
