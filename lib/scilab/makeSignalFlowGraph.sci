@@ -1,52 +1,131 @@
+//
+// This file is distributed under CeCill licence.
+// Read LICENCE.fr or LICENCE.en distributed with this file for details.
+//
+
+function graph = makeSignalFlowGraph(objs)
+
+    regular_link = list()
+    
+    for l = 1:length(objs)
+        if typeof(objs(l)) <> 'Link' then
+            continue
+        end
+        if (objs(l).ct(2) == 1) // Color Type 
+            regular_link($+1) = l
+        end
+    end
+
+    graph = makeGraph(objs, regular_link)
+    
+endfunction
+
 
 // Creates an edge list from a diagram objects list.
 // An edge is a tuple which elements are: source sink block event_source etc.
- 
-function edge_list = makeSignalFlowGraph(objs)
+
+function graph = makeGraph(objs, link_list)
+    
+    graph = tlist(['graph', 'edge', 'node'], list(), list())
+    
+    [edge_list, node_count] = makeEdgeList(objs, link_list)
+    
+    node_list = list()
+    for i = 1:node_count
+        node_list(i) = tlist(['node', 'source_list', 'sink_list', 'convergent_edge', 'divergent_edge'], list(), list(), list(), list())
+    end
+    
+    source_list = list()
+    sink_list = list()
+    for e = edge_list
+        
+        if e.source == list() then
+            source_list($+1) = e
+            continue
+        end
+        
+        if e.sink == list() then
+            sink_list($+1) = e
+            continue
+        end
+        
+        source = zeros(length(e.source), 2)
+        for i = 1:length(e.source)
+            source(i, 1:2) = e.source(i)
+        end
+        
+        sink = zeros(length(e.sink), 2)
+        for i = 1:length(e.sink)
+            sink(i, 1:2) = e.sink(i)
+        end
+             
+        graph.edge($+1) = createBlockTypeEdge(e.obj_index, source, sink)
+            
+    end
+
+    for e = 1:length(graph.edge)
+        for s = graph.edge(e).source'
+            node_list(s(1)).divergent_edge($+1) = [e, s(2)]
+        end
+        
+        for s = graph.edge(e).sink'
+            node_list(s(1)).convergent_edge($+1) = [e, s(2)]
+        end
+    end
+
+    for source_edge = source_list
+        for source = source_edge.sink
+            node_list(source(1)).source_list($+1) = [source_edge.obj_index, source(2)]
+            //for e = 1:length(node_list(source(1)).divergent_edge)
+             //   node_list(source(1)).divergent_edge(e)(2) = source(2)
+            //end
+        end
+    end
+
+    for sink_edge = sink_list
+        for sink = sink_edge.source
+            node_list(sink(1)).sink_list($+1) = [sink_edge.obj_index, sink(2)]
+            //for e = 1:length(node_list(sink(1)).convergent_edge)
+            //    node_list(sink(1)).convergent_edge(e)(2) = sink(2)
+            //end
+        end
+    end
+        
+    for n = node_list
+        divergent_edge = zeros(length(n.divergent_edge), 2)
+        for i = 1:length(n.divergent_edge)
+            divergent_edge(i,:) = n.divergent_edge(i)
+        end
+        convergent_edge = zeros(length(n.convergent_edge), 2)
+        for i = 1:length(n.convergent_edge)
+            convergent_edge(i,:) = n.convergent_edge(i)
+        end
+        source = zeros(length(n.source_list), 2)
+        for i = 1:length(n.source_list)
+            source(i,:) = n.source_list(i)
+        end
+        sink = zeros(length(n.sink_list), 2)
+        for i = 1:length(n.sink_list)
+            sink(i,:) = n.sink_list(i)
+        end
+        graph.node($+1) = tlist(['node', 'source', 'sink', 'convergent_edge', 'divergent_edge'], ...
+            source, sink, convergent_edge, divergent_edge)
+        
+    end
+        
+endfunction
+
+
+function [edge_list, node_count] = makeEdgeList(objs, link_list)
     
     
-    edge_list = list();
+    edge_list = list()
     current_node = 0;
     
-    for obj = objs
+    for l = link_list
         
-        if typeof(obj) <> 'Link' then
-            continue;
-        end
-        
-        block_name = getBlockName(objs(obj.from(1)));
-        // Event soruces
-        if block_name == 'CLOCK_c' then
-            
-            found = %f
-            block_id = obj.to(1);
-            block = objs(block_id);
-            event_source = objs(obj.from(1));
-            
-            for i = 1:length(edge_list)
-            
-                edge = edge_list(i);
-               
-                if edge.block_id <> block_id then
-                    continue;
-                end
-                
-                edge_list(i).event_source = obj.from(1);
-                found = %t  
-                break;
-                
-            end
-            
-            if ~found then
-                
-                edge_list($+1) = createEdge(list(), list(), block_id, list(), list());
-                edge_list($).timing_spec = getTimingSpec(event_source);
-            end
-            
-            continue;
-            
-        end
-        
+        obj = objs(l)      
+           
         current_node = current_node + 1;
         
         //mprintf('linking from %d to %d\n', obj.from(1), obj.to(1))
@@ -59,16 +138,15 @@ function edge_list = makeSignalFlowGraph(objs)
         // If not found, create a new edge without source connected to current node
         
         found = %f
-        for i = 1:length(edge_list)
+        for e = 1:length(edge_list)
             
-            edge = edge_list(i);
+            edge = edge_list(e);
            
-            if edge_list(i).block_id <> block_id then
+            if edge.obj_index <> block_id then
                 continue;
             end
             
-            edge_list(i).sink = lstcat(edge_list(i).sink, current_node)
-            edge_list(i).out_port = lstcat(edge_list(i).out_port, out_port)
+            edge_list(e).sink = lstcat(edge.sink, [current_node, out_port(2)])
             
             found = %t
             break;
@@ -76,7 +154,8 @@ function edge_list = makeSignalFlowGraph(objs)
         end
         
         if ~found then
-            edge_list($+1) = createEdge(list(), list(current_node), block_id, list(), list(out_port));
+            edge_list($+1) = createBlockTypeEdge(block_id, list(), ...
+                list([current_node, out_port(2)]))
         end
         
         //******** sink block *********
@@ -85,16 +164,15 @@ function edge_list = makeSignalFlowGraph(objs)
         block_id = in_port(1);
         block = objs(block_id); 
         found = %f;
-        for i = 1:length(edge_list)
+        for e = 1:length(edge_list)
             
-            edge = edge_list(i);
+            edge = edge_list(e);
    
-            if edge.block_id <> block_id then
+            if edge.obj_index <> block_id then
                 continue;
             end
              
-            edge_list(i).source = lstcat(edge_list(i).source, current_node)
-            edge_list(i).in_port = lstcat(edge_list(i).in_port, in_port)
+            edge_list(e).source = lstcat(edge.source, [current_node, in_port(2)])
             
             found = %t;
             break;
@@ -102,13 +180,18 @@ function edge_list = makeSignalFlowGraph(objs)
         end
         
         if ~found then
-            edge_list($+1) = createEdge(list(current_node), list(), block_id, list(in_port), list());
+            edge_list($+1) = createBlockTypeEdge(block_id, list([current_node, out_port(2)]), list())
         end 
     end
     
-    //edge_list = mergeEdges(edge_list) not used, implicitly merged
+    node_count = current_node;
+ 
+    
+   //edge_list = mergeEdges(edge_list) not used, implicitly merged
     
 endfunction
+
+
 
 function edge_list = mergeEdges(from_edge_list)
     
@@ -171,8 +254,9 @@ function name = getBlockName(block)
     name = block.gui
 endfunction
 
-function edge = createEdge(source, sink, block_id, in_port, out_port)
-    edge = tlist(['edge', 'block_id', 'source', 'sink', 'in_port', 'out_port', 'data_flow_hint', 'event_source', 'attributes'], block_id, source, sink, in_port, out_port, '', 0,  list());
+function edge = createBlockTypeEdge(obj_index, source, sink)
+    edge = tlist(['block-edge', 'obj_index', 'source', 'sink'], ...
+       obj_index, source, sink);
 endfunction
 
 
