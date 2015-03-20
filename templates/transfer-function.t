@@ -49,7 +49,7 @@ _TRANSFER_FUNCTION_NAME_
 	static number_t state[nelem+1];
 
 	x *= a[0];
-
+	
 	for (i=1; i<sizeof(state)/sizeof(state[0]); i++){
 		register number_t r;
 		r = state[i];
@@ -58,6 +58,7 @@ _TRANSFER_FUNCTION_NAME_
 	}
 
 	state[0] = x;
+	
 	y += x*b[0];
 
 	memmove(&state[1], &state[0], sizeof(state) - sizeof(state[0]));

@@ -1,0 +1,7 @@
+
+#Configuration file for building
+
+#Available platforms: 
+#	   stm32vldiscovery	STM32 VL Discovery Kit
+
+TARGET_PLATFORM=stm32vldiscovery

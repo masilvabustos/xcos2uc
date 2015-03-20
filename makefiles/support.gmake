@@ -1,0 +1,16 @@
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/globals.gmake
+
+include $(SUPPORT_DIR)/build.gmake
+
+VPATH=$(SUPPORT_DIR)
+
+.PHONY: subdirs support
+
+CFLAGS+=-DBUILD_PLATFORM=$(BUILD_PLATFORM) -I$(ROOT_DIR)/include
+
+support: subdirs $(OBJECTS)
+
+subdirs:
+	mkdir -p $(SUBDIRS)
+

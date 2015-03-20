@@ -1,0 +1,9 @@
+
+
+ROOT_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+
+MAKEFILES_DIR=$(ROOT_DIR)/makefiles
+
+PLATFORM_DIR=$(ROOT_DIR)/platform
+
+SUPPORT_DIR=$(ROOT_DIR)/support
