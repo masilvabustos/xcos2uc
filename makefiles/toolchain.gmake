@@ -1,2 +1,15 @@
 
-include $(dir $(lastword $(MAKEFILE_LIST)))/platform/$(BUILD_PLATFORM)-toolchain.gmake
+ifndef TARGET 
+$(error Define TARGET first!)
+endif
+
+include $(dir $(lastword $(MAKEFILE_LIST)))/globals.gmake
+
+#ifeq ($(shell [ -e $(MAKEFILE_DIR)/$(TARGET)-toolchain.gmake ] && echo yes),yes)
+include $(MAKEFILES_DIR)/platform/$(TARGET)-toolchain.gmake
+#else
+#$(error No such target platform: $(TARGET))
+#endif
+
+$(MAKEFILES_DIR)/platform/$(TARGET)-toolchain.gmake:
+	@echo No such target platform: $(TARGET); false;

@@ -1,17 +1,34 @@
 
-PLATFORMS=stm32vldiscovery
+
+#ifndef BUILD_PLATFORM
+#$(error BUILD_PLATFORM variable must be defined. Available platforms are: $(PLATFORMS))
+#endif
+
 
 include $(dir $(lastword $(MAKEFILE_LIST)))/globals.gmake
 
-TARGETS=default
+PLATFORMS=$(notdir $(basename $(wildcard $(MAKEFILES_DIR)/platform/*.gmake)))
+
+.DEFAULT_GOAL := print-platforms
+
 
 .PHONY: $(PLATFORMS) default
 
-default:
-	$(MAKE) -f $(MAKEFILES_DIR)/platform/$(BUILD_PLATFORM).gmake
+
+$(PLATFORMS): PLATFORM_MAKEFILE = $(MAKEFILES_DIR)/platform/$@.gmake
+
+lib%.a: %
+	@touch $@
+
+
+$(PLATFORMS):
+	$(MAKE) -f $(PLATFORM_MAKEFILE) lib$@.a
 
 print-platforms:
 	@echo $(PLATFORMS)
+
+.DEFAULT:
+	@echo No such platform: $@.
 
 
 #$(TARGETS):

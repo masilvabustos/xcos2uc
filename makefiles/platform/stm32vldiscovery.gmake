@@ -20,17 +20,28 @@ startup_stm32f10x_%.o: startup_stm32f10x_%.s
 
 DRIVER_OBJS=$(foreach driver, $(DRIVERS), stm32f10x_$(driver).o) STM32vldiscovery.o misc.o system_stm32f10x.o startup_stm32f10x_md_vl.o
 
-CFLAGS+=$(foreach dir, $(INCLUDE_DIRS), -I$(dir))
+#CFLAGS+=$(foreach dir, $(INCLUDE_DIRS), -I$(dir))
 
-CFLAGS+=-DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD_VL 
+override CFLAGS+=-DUSE_STDPERIPH_DRIVER -DSTM32F10X_MD_VL 
+
+libstm32vldiscovery.a: $(DRIVER_OBJS)
+	$(AR) -rc $@ $^
 
 drivers: $(DRIVER_OBJS)
 
-.PHONY: clean print-drivers drivers
+.PHONY: clean print-drivers drivers program
 
 clean:
 	rm $(DRIVER_OBJS)
 
 print-drivers:
 	@echo adc bkp can cec crc dac dbgmcu dma exti flash fsmc gpio i2c iwdg pwr rcc rtc sdio spi tim usart wwdg
+
+
+program: MY_ST_FLASH=$(if $(ST_FLASH),$(ST_FLASH),$(error ST_FLASH must be defined!))  
+
+program: MY_IMAGE_FILE=$(if $(IMAGE_FILE),$(IMAGE_FILE),$(error IMAGE_FILE must be defined!))
+
+program: $(MY_ST_FLASH) $(MY_IMAGE_FILE)
+	[ -x $(MY_ST_FLASH) ] && pkexec $(MY_ST_FLASH) write $(abspath $(MY_IMAGE_FILE)) 0x8000000
 

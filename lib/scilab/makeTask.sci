@@ -1,4 +1,7 @@
 
+function result = makeTasks(objs)
+endfunction
+
 function status = generateCodeForTask(name, expr, parameters)
     
     fd = parameters.fd

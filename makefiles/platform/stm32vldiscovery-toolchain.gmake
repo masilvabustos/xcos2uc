@@ -10,18 +10,22 @@ INCLUDE_DIRS += $(STM32VLDISCOVERY_PACKAGE_DIR)/Libraries/STM32F10x_StdPeriph_Dr
 
 CROSS_PREFIX=arm-none-eabi
 
-CC=$(CROSS_PREFIX)-gcc
+CC=$(CROSS_PREFIX)-gcc -mcpu=cortex-m3 -mthumb -mapcs-frame -D__thumb2__=1 -msoft-float -mno-sched-prolog -mtune=cortex-m3 -march=armv7-m -mfix-cortex-m3-ldrd 
 AS=$(CROSS_PREFIX)-as
 LD=$(CROSS_PREFIX)-gcc -nostdlib 
 AR=$(CROSS_PREFIX)-ar
+OBJCOPY=$(CROSS_PREFIX)-objcopy
+
+override CPPFLAGS+=$(foreach dir, $(INCLUDE_DIRS), -I$(dir))
 
 #copied from https://github.com/h0rr0rrdrag0n/stm32vldiscovery-linux-template/blob/master/Makefile
 
-CFLAGS+=-c -mcpu=cortex-m3 -mthumb -O0 -mapcs-frame -D__thumb2__=1
-CFLAGS+=-msoft-float -gdwarf-2 -mno-sched-prolog -fno-hosted -mtune=cortex-m3
-CFLAGS+=-march=armv7-m -mfix-cortex-m3-ldrd -ffunction-sections -fdata-sections
+#CFLAGS+=-c -mcpu=cortex-m3 -mthumb -O0 -mapcs-frame -D__thumb2__=1
+#CFLAGS+=-msoft-float -gdwarf-2 -mno-sched-prolog -fno-hosted -mtune=cortex-m3
+override CFLAGS+= -gdwarf-2 -fno-hosted
+#CFLAGS+=-march=armv7-m -mfix-cortex-m3-ldrd -ffunction-sections -fdata-sections
+override CFLAGS+=-ffunction-sections -fdata-sections
 #CFLAGS+=-I./cmsis -I./stm32_lib -I.
-ASFLAGS+=-mcpu=cortex-m3 -gdwarf-2 -gdwarf-2
-LDFLAGS+=-T"$(STM32VLDISCOVERY_PACKAGE_DIR)/Project/link.ld" -Wl,--gc-sections -static
+override ASFLAGS+=-mcpu=cortex-m3 -gdwarf-2 -gdwarf-2
+override LDFLAGS+=-T"$(STM32VLDISCOVERY_PACKAGE_DIR)/Project/link.ld" -Wl,--gc-sections -static
 
-CFLAGS+=$(foreach dir,$(INCLUDE_DIRS),-I$(dir))

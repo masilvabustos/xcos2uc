@@ -1,10 +1,12 @@
 
-function result = generateTaskCModule(verbose_graph, objs, fd, conf)
+function result = generateTaskCModule(task_name, verbose_graph, objs, fd, conf)
     
     result = []
     
     mfprintf(fd, '#define source_block(x) source_block_##x()\n')
     mfprintf(fd, '#define sink_block(p, r) sink_block_##p(r)\n')
+    
+    mfprintf(fd, 'struct array_of_2 {_NUMBER_TYPE val[2];};\n')
 
     for expr = verbose_graph
         if typeof(expr) <> 'function' then
@@ -14,7 +16,7 @@ function result = generateTaskCModule(verbose_graph, objs, fd, conf)
         mfprintf(fd, '\n')
     end
     
-    mfprintf(fd, 'void task()\n{\n')
+    mfprintf(fd, 'void %s()\n{\n', task_name)
     generateTaskCoreCDecls(verbose_graph, objs, fd, conf)
     generateTaskCoreCCode(verbose_graph, objs, fd, conf)
     mfprintf(fd, '}\n\n')
@@ -48,13 +50,17 @@ function result = generateTaskCoreCDecls(verbose_graph, objs, fd, conf)
     local_states_set = []
     array_registers_list = []
     a = 1
+    input_list = list()
+    output_list = list()
     
     for pred = verbose_graph
         select typeof(pred)
         case 'get' then
             registers_set = union([pred.register], registers_set)
+            input_list($+1) = pred.obj_index
         case 'put' then
             registers_set = union([pred.register], registers_set)
+            output_list($+1) = pred.obj_index
         case 'pull-local' then
             registers_set = union([pred.registers], registers_set)
             local_states_set = union([pred.nodes], local_states_set)
@@ -80,13 +86,28 @@ function result = generateTaskCoreCDecls(verbose_graph, objs, fd, conf)
     end
     
     for i = 1:length(array_registers_list)
-        mfprintf(fd, '%sregister _NUMBER_TYPE a%d[%d];\n', conf.indent, i, ...
-            array_registers_list(i))
+        mfprintf(fd, '%sstruct array_of_%d a%d;\n', conf.indent, ...
+            array_registers_list(i), i)
     end
     
     for x = local_states_set
         mfprintf(fd, '%sstatic _NUMBER_TYPE x%d = 0;\n', conf.indent, x)
     end
+    
+    for i = input_list
+        name = objs(i).graphics.id
+        if name <> '' then
+            mfprintf(fd, '%sextern _NUMBER_TYPE %s();\n', conf.indent, name)
+        end
+    end
+    
+     for i = output_list
+        name = objs(i).graphics.id
+        if name <> '' then
+            mfprintf(fd, '%sextern void %s(_NUMBER_TYPE);\n', conf.indent, name)
+        end
+    end
+    
     
     
 endfunction
@@ -101,7 +122,7 @@ function result = generateTaskCoreCCode(verbose_graph, objs, fd, conf)
             
             name = objs(pred.obj_index).graphics.id
             
-            if name = '' then
+            if name == '' then
                 warning('id field not defined')
                 name = msprintf('source_block_%d', evstr(objs(pred.obj_index).graphics.exprs))
             end
@@ -112,7 +133,7 @@ function result = generateTaskCoreCCode(verbose_graph, objs, fd, conf)
             
             name = objs(pred.obj_index).graphics.id
             
-            if name = '' then
+            if name == '' then
                 warning('id field not defined')
                 name = msprintf('sink_block_%d', evstr(objs(pred.obj_index).graphics.exprs))
             end
@@ -168,7 +189,7 @@ function result = generateTaskCoreCCode(verbose_graph, objs, fd, conf)
             if length(pred.out) > 1 then
                 for i = 1:length(pred.out)
                     x = pred.out(i)
-                    mfprintf(fd, '%sr%d = a%d[%d];\n', conf.indent, x(1), a, i-1)
+                    mfprintf(fd, '%sr%d = a%d.val[%d];\n', conf.indent, x(1), reg_index, i-1)
                 end
             end
 
@@ -306,6 +327,6 @@ endfunction
 
 function result = __genSPLIT_f(index, block, fd, conf)
     
-    mfprintf(fd, '#define SPLIT_f_block_%d(x) ((_NUMBER_TYPE[2]) {(x), (x)})\n', index)
+    mfprintf(fd, '#define SPLIT_f_block_%d(x) ((struct array_of_2) {(x), (x)})\n', index)
 
 endfunction
